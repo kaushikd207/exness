@@ -1,44 +1,22 @@
 import express from "express";
-import { getRecentTrades } from "./queryTrades";
-import { redisPublisher } from "./redisClient";
+import cors from "cors";
+import bodyParser from "body-parser";
+import { signup, signin } from "./auth";
+import orderRoutes from "./routes/orders";
+import marketRoutes from "./routes/market";
 
 const app = express();
-const PORT = 4000;
+app.use(cors());
+app.use(bodyParser.json());
 
-app.use(express.json());
+// auth
+app.post("/signup", signup);
+app.post("/signin", signin);
 
-app.get("/api/trades", async (req, res) => {
-  try {
-    const trades = await getRecentTrades(50);
-    res.json(trades);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch trades" });
-  }
-});
+// protected routes
+app.use("/orders", orderRoutes);
+app.use("/market", marketRoutes);
 
-app.post("/api/order", (req, res) => {
-  const { type, price, quantity } = req.body;
-
-  if (!["CALL", "PUT"].includes(type)) {
-    return res.status(400).json({ error: "Invalid order type" });
-  }
-
-  const order = {
-    id: Date.now(),
-    type,
-    price,
-    quantity,
-    status: "PLACED",
-    createdAt: new Date().toISOString(),
-  };
-
-  redisPublisher.publish("orders", JSON.stringify(order));
-
-  console.log("Order placed:", order);
-  res.json(order);
-});
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+app.listen(3000, () =>
+  console.log("🚀 Server running on http://localhost:3000")
+);
