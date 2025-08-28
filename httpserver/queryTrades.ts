@@ -11,8 +11,8 @@ export async function getRecentTrades(limit = 10) {
   `;
 
   return new Promise((resolve, reject) => {
-    const results: any[] = [];+
-    6
+    const results: any[] = [];
+    +6;
     queryApi.queryRows(fluxQuery, {
       next(row, tableMeta) {
         results.push(tableMeta.toObject(row));

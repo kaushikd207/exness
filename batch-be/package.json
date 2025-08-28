@@ -1,5 +1,5 @@
 {
-  "name": "polar-backend",
+  "name": "batch-be",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -11,11 +11,10 @@
   },
   "dependencies": {
     "@influxdata/influxdb-client": "^1.35.0",
-    "@types/express": "^5.0.3",
-    "@types/ws": "^8.18.1",
+    "@types/pg": "^8.15.5",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0",
     "ioredis": "^5.7.0",
-    "ws": "^8.18.3"
+    "pg": "^8.16.3",
+    "redis": "^5.8.2"
   }
 }

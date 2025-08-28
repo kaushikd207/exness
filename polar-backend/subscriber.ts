@@ -7,8 +7,3 @@ redisSubscriber.subscribe("trades", (err, count) => {
     console.log(`Subscribed to ${count} channel(s).`);
   }
 });
-
-redisSubscriber.on("message", (channel, message) => {
-  const trade = JSON.parse(message);
-  console.log(" Received from Redis:", trade);
-});
