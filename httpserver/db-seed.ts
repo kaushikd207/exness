@@ -1,63 +1,49 @@
-import { Client } from "pg";
+import { Router } from "express";
+import { pg } from "../db";
 
-const client = new Client({
-  user: "postgres",
-  host: "localhost",
-  database: "postgres",
-  password: "password",
-  port: 5432,
+const router = Router();
+
+// ✅ Allowed intervals mapped to PostgreSQL `time_bucket`
+const validIntervals: Record<string, string> = {
+  "1m": "1 minute",
+  "5m": "5 minutes",
+  "15m": "15 minutes",
+  "30m": "30 minutes",
+  "1h": "1 hour",
+};
+
+router.get("/candles/:symbol/:interval", async (req, res) => {
+  const { symbol, interval } = req.params;
+
+  const bucket = validIntervals[interval];
+  if (!bucket) {
+    return res.status(400).json({ error: "Invalid interval" });
+  }
+
+  try {
+    const result = await pg.query(
+      `
+      SELECT
+        time_bucket($1, created_at) AS bucket,
+        first(price, created_at) AS open,
+        max(price) AS high,
+        min(price) AS low,
+        last(price, created_at) AS close,
+        sum(quantity) AS volume
+      FROM orders
+      WHERE LOWER(symbol) = LOWER($2)
+      GROUP BY bucket
+      ORDER BY bucket DESC
+      LIMIT 100;
+      `,
+      [bucket, symbol]
+    );
+
+    res.json(result.rows);
+  } catch (err: any) {
+    console.error("❌ Query error:", err.message);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
-async function seed() {
-  try {
-    await client.connect();
-    console.log("🌱 Seeding database...");
-
-    // 1. Create tables if not exist
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        balance DOUBLE PRECISION DEFAULT 500
-      );
-    `);
-
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS orders (
-        id SERIAL PRIMARY KEY,
-        user_id INT REFERENCES users(id) ON DELETE CASCADE,
-        symbol VARCHAR(20) NOT NULL,
-        side VARCHAR(4) NOT NULL CHECK (side IN ('BUY','SELL')),
-        price DOUBLE PRECISION NOT NULL,
-        quantity DOUBLE PRECISION NOT NULL,
-        created_at TIMESTAMPTZ DEFAULT NOW()
-      );
-    `);
-
-    // 2. Insert demo users
-    await client.query(`
-      INSERT INTO users (email, password, balance)
-      VALUES 
-        ('alice@example.com', 'hashedpassword1', 500),
-        ('bob@example.com', 'hashedpassword2', 500)
-      ON CONFLICT (email) DO NOTHING;
-    `);
-
-    // 3. Insert demo orders
-    await client.query(`
-      INSERT INTO orders (user_id, symbol, side, price, quantity)
-      VALUES
-        (1, 'BTCUSDT', 'BUY', 50000, 0.01),
-        (2, 'ETHUSDT', 'SELL', 3000, 0.5);
-    `);
-
-    console.log("✅ Database seeded successfully!");
-  } catch (err) {
-    console.error("❌ Error during seeding:", err);
-  } finally {
-    await client.end();
-  }
-}
-
-seed();
+export default router;

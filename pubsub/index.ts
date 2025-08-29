@@ -16,7 +16,7 @@ redisSubscriber.subscribe("trades", (err, count) => {
 
 // Listen for published messages
 redisSubscriber.on("message", (channel, message) => {
-  console.log("Got message from", channel, ":", message);
+  // console.log("Got message from", channel, ":", message);
   wss.clients.forEach((client) => {
     if (client.readyState === 1) {
       client.send(message);

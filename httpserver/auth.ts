@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import { pg } from "./db";
 import { Request, Response, NextFunction } from "express";
 
-const SECRET = "supersecret"; // move to env
+const SECRET = "supersecret";
 
 export async function signup(req: Request, res: Response) {
   const { email, password } = req.body;

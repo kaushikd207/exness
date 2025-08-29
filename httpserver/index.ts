@@ -9,11 +9,11 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// auth
+// Auth
 app.post("/signup", signup);
 app.post("/signin", signin);
 
-// protected routes
+// Protected routes
 app.use("/orders", orderRoutes);
 app.use("/market", marketRoutes);
 

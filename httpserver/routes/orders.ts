@@ -20,7 +20,7 @@ router.post("/place", authMiddleware, async (req, res) => {
     return res.status(400).json({ error: "Insufficient balance" });
   }
 
-  // transaction: insert order + update balance
+  // transaction
   try {
     await pg.query("BEGIN");
 
