@@ -1,5 +1,4 @@
 import { Router } from "express";
-
 import { assets } from "../data";
 
 const router = Router();
