@@ -1,22 +1,20 @@
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import { signup, signin } from "./auth";
-import orderRoutes from "./routes/orders";
-import marketRoutes from "./routes/market";
+import assetsRouter from "./routes/assets";
+import candlesRouter from "./routes/candles";
+import tradesRouter from "./routes/trades";
+import userRouter from "./routes/user";
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Auth
-app.post("/signup", signup);
-app.post("/signin", signin);
+app.use("/api/v1/assets", assetsRouter);
+app.use("/api/v1/candles", candlesRouter);
+app.use("/api/v1/trades", tradesRouter);
+app.use("/api/v1/user", userRouter);
 
-// Protected routes
-app.use("/orders", orderRoutes);
-app.use("/market", marketRoutes);
-
-app.listen(3000, () =>
-  console.log("🚀 Server running on http://localhost:3000")
-);
+app.listen(4000, () => {
+  console.log("HTTP server listening on port 4000");
+});
