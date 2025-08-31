@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, ChevronDown, Minus, Plus, HelpCircle } from "lucide-react";
+import { X, ChevronDown, Minus, Plus } from "lucide-react";
 
 interface Asset {
   symbol: string;
@@ -14,8 +14,6 @@ interface Asset {
 export default function TradeForm() {
   const [orderType, setOrderType] = useState<"market" | "pending">("market");
   const [volume, setVolume] = useState("10.00");
-  const [takeProfit, setTakeProfit] = useState("Not set");
-  const [stopLoss, setStopLoss] = useState("Not set");
   const [asset, setAsset] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(false);
   const [trade, setTrade] = useState<any>(null);
@@ -58,24 +56,39 @@ export default function TradeForm() {
     return () => ws.close();
   }, []);
 
-  // ✅ Place order
+  // ✅ Place order with dynamic token
+  // ✅ Place order with dynamic token & websocket price
   const handleOrder = async (side: "buy" | "sell") => {
     if (!asset) return;
+
     setLoading(true);
     setError("");
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("No token found. Please login again.");
+      setLoading(false);
+      return;
+    }
+
+    // pick correct live price based on side
+    const currentPrice =
+      side === "buy"
+        ? asset.buyPrice / Math.pow(10, asset.decimals)
+        : asset.sellPrice / Math.pow(10, asset.decimals);
 
     try {
       const res = await fetch("http://localhost:4000/api/v1/trades", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFmOGMwOWE3LTE1MjAtNDQ0OS05NTVjLTdlZWQyY2JhNTBkOCIsImVtYWlsIjoia2F1c2hpa2QyMDdAZ21haWwuY29tIiwiaWF0IjoxNzU2NTM5NzA4fQ.2ZnxDLrB8Vdc18lXgjW6aCQFDLAvfVoTWeQIRPAtCLQ", // replace with real token
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           type: side,
           margin: Number(volume),
-          leverage: 10, // fixed leverage for now
+          leverage: 0,
+          openPrice: currentPrice,
         }),
       });
 
@@ -83,7 +96,7 @@ export default function TradeForm() {
       if (!res.ok) {
         setError(data.message || "Error placing order");
       } else {
-        setTrade(data.trade);
+        setTrade(data); // store full trade response
       }
     } catch {
       setError("Something went wrong");
@@ -104,14 +117,6 @@ export default function TradeForm() {
         </div>
         <button className="text-gray-400 hover:text-white transition-colors">
           <X className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Regular form dropdown */}
-      <div className="mb-4">
-        <button className=" text-white w-full bg-[#1a1f28] border border-[#3A4854] rounded px-3 py-2 flex items-center justify-between text-left hover:border-[#4A5864] transition-colors">
-          <span>Regular form</span>
-          <ChevronDown className="w-4 h-4" />
         </button>
       </div>
 
@@ -198,36 +203,6 @@ export default function TradeForm() {
       {/* Error */}
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      {/* Order Preview */}
-      {trade && (
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-semibold text-gray-700 mb-2">Order Created</h3>
-          <p>
-            <span className="font-medium">Type:</span>{" "}
-            <span
-              className={
-                trade.type === "buy" ? "text-green-600" : "text-red-600"
-              }
-            >
-              {trade.type}
-            </span>
-          </p>
-          <p>
-            <span className="font-medium">Margin:</span> {trade.margin / 100} $
-          </p>
-          <p>
-            <span className="font-medium">Leverage:</span> {trade.leverage}x
-          </p>
-          <p>
-            <span className="font-medium">Open Price:</span>{" "}
-            {trade.openPrice / 10000} $
-          </p>
-          <p>
-            <span className="font-medium">Close Price:</span>{" "}
-            {trade.closePrice / 10000} $
-          </p>
-        </div>
-      )}
     </div>
   );
 }
