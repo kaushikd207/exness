@@ -3,12 +3,13 @@
 import React, { useEffect, useState } from "react";
 import { Settings, User, Clock, Grid3X3 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
+import { useBalanceStore } from "@/store";
 export function NavigationHeader() {
   const router = useRouter();
   const [balance, setBalance] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const bal = useBalanceStore((state: any) => state.updateBalance);
   // ✅ Fetch balance
   useEffect(() => {
     const fetchBalance = async () => {
@@ -26,6 +27,7 @@ export function NavigationHeader() {
         if (!res.ok) throw new Error("Failed to fetch balance");
         const data = await res.json();
         setBalance(data?.usd_balance);
+        bal(data?.usd_balance);
       } catch (err) {
         console.error(err);
       }

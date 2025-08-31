@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X, ChevronDown, Minus, Plus } from "lucide-react";
+import { useBalanceStore } from "@/store";
 
 interface Asset {
   symbol: string;
@@ -16,10 +17,11 @@ export default function TradeForm() {
   const [volume, setVolume] = useState("10.00");
   const [asset, setAsset] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(false);
-  const [balance, setBalance] = useState<number>(0);
+  const [balance, setBalance] = useState<number>(1000000);
   const [trade, setTrade] = useState<any>(null);
   const [error, setError] = useState("");
-
+  const bal = useBalanceStore((state: any) => state.updateBalance);
+  const updateBtcPrice = useBalanceStore((state: any) => state.updateBtcPrice);
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -42,6 +44,7 @@ export default function TradeForm() {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
+        updateBtcPrice(msg.price);
         if (msg.symbol === "BTCUSDT") {
           setAsset((prev) =>
             prev
@@ -70,12 +73,14 @@ export default function TradeForm() {
       });
       const data = await res.json();
       setBalance(data.usd_balance || 0);
+      bal(data?.usd_balance);
     } catch (err) {
       console.error("Error fetching balance", err);
     }
   };
 
   const handleOrder = async (side: "buy" | "sell") => {
+    setError("");
     fetchBalance();
     if (!asset) return;
 
@@ -94,12 +99,16 @@ export default function TradeForm() {
       side === "buy"
         ? asset.buyPrice / Math.pow(10, asset.decimals)
         : asset.sellPrice / Math.pow(10, asset.decimals);
+    console.log(volume, currentPrice, balance);
+    if (volume * currentPrice > balance) {
+      setError("Insufficient balance");
+      setLoading(false);
+      return;
+    }
 
-    // if (volume * currentPrice > balance * 84) {
-    //   setError("Insufficient balance");
-    //   setLoading(false);
-    //   return;
-    // }
+    const updateBalance = balance - volume * currentPrice.toFixed(2);
+    setBalance(updateBalance);
+    bal(updateBalance);
 
     try {
       const res = await fetch("http://localhost:4000/api/v1/trades", {
@@ -197,26 +206,41 @@ export default function TradeForm() {
       </div>
 
       {/* Volume */}
+      {/* Volume */}
       <div className="mb-6">
         <label className="block text-sm text-gray-300 mb-2">Volume</label>
         <div className="flex items-center space-x-2">
           <input
-            type="text"
+            type="number"
+            step="0.01" // ✅ allows decimals
+            min="0.01"
             value={volume}
             onChange={(e) => setVolume(e.target.value)}
             className="flex-1 bg-[#1a1f28] border border-[#3A4854] rounded px-3 py-2 text-white focus:border-[#4A5864] focus:outline-none"
           />
           <span className="text-sm text-white">Lots</span>
+
+          {/* Decrement button */}
           <button
             onClick={() =>
-              setVolume((prev) => Math.max(Number(prev) - 1, 0).toString())
+              setVolume((prev) => {
+                const val = parseFloat(prev) || 0;
+                return Math.max(val - 0.1, 0.01).toFixed(2); // ✅ keep 2 decimals
+              })
             }
             className="w-8 h-8 bg-green-200 border border-[#3A4854] rounded flex items-center justify-center hover:border-[#4A5864] transition-colors"
           >
             <Minus className="w-4 h-4" />
           </button>
+
+          {/* Increment button */}
           <button
-            onClick={() => setVolume((prev) => (Number(prev) + 1).toString())}
+            onClick={() =>
+              setVolume((prev) => {
+                const val = parseFloat(prev) || 0;
+                return (val + 0.1).toFixed(2); // ✅ step 0.1
+              })
+            }
             className="w-8 h-8 bg-green-200 border border-[#3A4854] rounded flex items-center justify-center hover:border-[#4A5864] transition-colors"
           >
             <Plus className="w-4 h-4" />

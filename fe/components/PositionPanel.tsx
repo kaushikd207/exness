@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { X, BarChart3, Grid3X3, MoreHorizontal, Briefcase } from "lucide-react";
-
+import { useBalanceStore } from "@/store";
 interface Trade {
   orderId: string;
   type: "buy" | "sell";
@@ -21,6 +21,8 @@ export function PositionsPanel() {
   const [balance, setBalance] = useState<number>(0);
   const [loading, setLoading] = useState(false);
 
+  const bal = useBalanceStore((state: any) => state.bal);
+  const currentBtcPrice = useBalanceStore((state: any) => state.currBtcPrice);
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -50,7 +52,7 @@ export function PositionsPanel() {
       if (activeTab === "open") {
         endpoint = "http://localhost:4000/api/v1/trades/open";
       } else if (activeTab === "closed") {
-        endpoint = "http://localhost:4000/api/v1/trades/closed";
+        endpoint = "http://localhost:4000/api/v1/trades";
       }
 
       const res = await fetch(endpoint, {
@@ -126,7 +128,7 @@ export function PositionsPanel() {
 
           {/* ✅ Show balance */}
           <div className="text-white text-sm font-semibold">
-            Balance: ${balance.toFixed(2)}
+            Balance: ${bal.toFixed(2)}
           </div>
 
           <div className="flex items-center space-x-2">
@@ -158,13 +160,14 @@ export function PositionsPanel() {
               <thead>
                 <tr className="text-gray-400 border-b border-[#3A4854]">
                   <th className="py-2 text-left">Type</th>
-                  <th className="py-2 text-left">Margin</th>
+                  <th className="py-2 text-left">Current Price</th>
                   <th className="py-2 text-left">Leverage</th>
                   <th className="py-2 text-left">Open Price</th>
                   {activeTab === "closed" && (
                     <th className="py-2 text-left">Close Price</th>
                   )}
                   <th className="py-2 text-left">Status</th>
+                  <th className="py-2 text-left">PnL</th>
                   <th className="py-2 text-left">Action</th>
                 </tr>
               </thead>
@@ -181,9 +184,7 @@ export function PositionsPanel() {
                     >
                       {trade.type.toUpperCase()}
                     </td>
-                    <td className="py-2">
-                      {(trade.margin * trade?.openPrice).toFixed(2)}
-                    </td>
+                    <td className="py-2">{currentBtcPrice.toFixed(2)}</td>
                     <td className="py-2">{trade.leverage}x</td>
                     <td className="py-2">{trade.openPrice.toFixed(2)}</td>
                     {activeTab === "closed" && (
@@ -194,6 +195,9 @@ export function PositionsPanel() {
                       </td>
                     )}
                     <td className="py-2">{trade.status}</td>
+                    <td className="py-2">
+                      {(currentBtcPrice - trade.openPrice).toFixed(2)}
+                    </td>
                     <td className="py-2">
                       {activeTab === "open" && (
                         <button
