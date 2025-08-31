@@ -16,8 +16,12 @@ export default function TradeForm() {
   const [volume, setVolume] = useState("10.00");
   const [asset, setAsset] = useState<Asset | null>(null);
   const [loading, setLoading] = useState(false);
+  const [balance, setBalance] = useState<number>(0);
   const [trade, setTrade] = useState<any>(null);
   const [error, setError] = useState("");
+
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   // ✅ Fetch initial BTC data
   useEffect(() => {
@@ -56,9 +60,23 @@ export default function TradeForm() {
     return () => ws.close();
   }, []);
 
-  // ✅ Place order with dynamic token
-  // ✅ Place order with dynamic token & websocket price
+  const fetchBalance = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch("http://localhost:4000/api/v1/balance", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      setBalance(data.usd_balance || 0);
+    } catch (err) {
+      console.error("Error fetching balance", err);
+    }
+  };
+
   const handleOrder = async (side: "buy" | "sell") => {
+    fetchBalance();
     if (!asset) return;
 
     setLoading(true);
@@ -76,6 +94,12 @@ export default function TradeForm() {
       side === "buy"
         ? asset.buyPrice / Math.pow(10, asset.decimals)
         : asset.sellPrice / Math.pow(10, asset.decimals);
+
+    // if (volume * currentPrice > balance * 84) {
+    //   setError("Insufficient balance");
+    //   setLoading(false);
+    //   return;
+    // }
 
     try {
       const res = await fetch("http://localhost:4000/api/v1/trades", {
@@ -202,7 +226,6 @@ export default function TradeForm() {
 
       {/* Error */}
       {error && <p className="text-red-500 mb-4">{error}</p>}
-
     </div>
   );
 }

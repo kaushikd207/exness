@@ -9,7 +9,6 @@ const router = Router();
 router.post("/", authMiddleware, (req: any, res) => {
   const { type, margin, leverage, openPrice, orderId, closePrice } = req.body;
 
-  // 👉 Close Trade
   if (orderId) {
     const trade = trades.find(
       (t) => t.orderId === orderId && t.userId === req.user.id
@@ -29,8 +28,6 @@ router.post("/", authMiddleware, (req: any, res) => {
     if (user) {
       user.usd_balance += trade.margin;
     }
-
-    console.log("❌ Trade closed:", trade);
     return res.json({ trade });
   }
 
@@ -96,14 +93,10 @@ router.post("/", authMiddleware, (req: any, res) => {
 
 // Get all open trades for logged-in user
 router.get("/open", authMiddleware, (req: any, res) => {
-  console.log("🔑 Current user:", req.user);
-  console.log("📊 All trades:", trades);
 
   const openTrades = trades.filter(
     (t) => t.userId === req.user.id && t.status === "open"
   );
-
-  console.log("📂 Open trades for user:", openTrades);
 
   res.json({ trades: openTrades });
 });

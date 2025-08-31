@@ -181,11 +181,11 @@ export function PositionsPanel() {
                     >
                       {trade.type.toUpperCase()}
                     </td>
-                    <td className="py-2">{trade.margin}</td>
-                    <td className="py-2">{trade.leverage}x</td>
                     <td className="py-2">
-                      {(trade.openPrice).toFixed(2)}
+                      {(trade.margin * trade?.openPrice).toFixed(2)}
                     </td>
+                    <td className="py-2">{trade.leverage}x</td>
+                    <td className="py-2">{trade.openPrice.toFixed(2)}</td>
                     {activeTab === "closed" && (
                       <td className="py-2">
                         {trade.closePrice
