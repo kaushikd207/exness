@@ -24,7 +24,7 @@ export default function CandleChart() {
 
     const chart = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
-      height: 500,
+      height: 250, // 🔥 Reduced to half
       layout: {
         background: { color: "#0d1117" },
         textColor: "#d1d4dc",
@@ -123,7 +123,7 @@ export default function CandleChart() {
   }, []);
 
   return (
-    <div className="p-4 text-white">
+    <div className="bg-[#1E272E] rounded-lg p-4 text-white">
       {/* Header with Symbol + Live Price */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold">
@@ -152,9 +152,9 @@ export default function CandleChart() {
           ))}
         </div>
       </div>
-
       {/* Chart */}
-      <div ref={chartContainerRef} className="w-full h-[500px]" />
+      <div ref={chartContainerRef} className="w-full h-[250px]" />{" "}
+      {/* 🔥 Half height */}
     </div>
   );
 }
