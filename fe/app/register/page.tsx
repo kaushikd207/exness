@@ -22,6 +22,7 @@ export default function RegisterPage() {
       router.push("/login"); // ✅ redirect to login page
     } else {
       alert(data.message || "Registration failed");
+      router.push("/login"); // stay on register page
     }
   };
 

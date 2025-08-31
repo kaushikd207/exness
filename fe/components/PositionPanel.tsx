@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { X, BarChart3, Grid3X3, MoreHorizontal, Briefcase } from "lucide-react";
 import { useBalanceStore } from "@/store";
+
 interface Trade {
   orderId: string;
   type: "buy" | "sell";
@@ -52,7 +53,7 @@ export function PositionsPanel() {
       if (activeTab === "open") {
         endpoint = "http://localhost:4000/api/v1/trades/open";
       } else if (activeTab === "closed") {
-        endpoint = "http://localhost:4000/api/v1/trades";
+        endpoint = "http://localhost:4000/api/v1/trades"; // better endpoint if backend supports
       }
 
       const res = await fetch(endpoint, {
@@ -70,12 +71,9 @@ export function PositionsPanel() {
     }
   };
 
-  // ✅ Close trade
+  // ✅ Close trade with actual current price
   const closeTrade = async (orderId: string) => {
     if (!token) return;
-
-    // mock live price (replace with websocket price if available)
-    const livePrice = Math.floor(Math.random() * 50000) + 20000;
 
     try {
       await fetch("http://localhost:4000/api/v1/trades", {
@@ -84,7 +82,10 @@ export function PositionsPanel() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ orderId, closePrice: livePrice }),
+        body: JSON.stringify({
+          orderId,
+          closePrice: currentBtcPrice, // use live price from store
+        }),
       });
 
       await fetchTrades(); // refresh trades in UI
@@ -172,44 +173,53 @@ export function PositionsPanel() {
                 </tr>
               </thead>
               <tbody>
-                {trades.map((trade) => (
-                  <tr
-                    key={trade.orderId}
-                    className="border-b border-[#3A4854] hover:bg-[#1a1f28]"
-                  >
-                    <td
-                      className={`py-2 ${
-                        trade.type === "buy" ? "text-green-400" : "text-red-400"
-                      }`}
+                {trades.map((trade) => {
+                  const isClosed = trade.status === "closed";
+                  const priceForPnl = isClosed
+                    ? trade.closePrice || trade.openPrice
+                    : currentBtcPrice;
+                  const pnl =
+                    trade.type === "buy"
+                      ? priceForPnl - trade.openPrice
+                      : trade.openPrice - priceForPnl;
+
+                  return (
+                    <tr
+                      key={trade.orderId}
+                      className="border-b border-[#3A4854] hover:bg-[#1a1f28]"
                     >
-                      {trade.type.toUpperCase()}
-                    </td>
-                    <td className="py-2">{currentBtcPrice.toFixed(2)}</td>
-                    <td className="py-2">{trade.leverage}x</td>
-                    <td className="py-2">{trade.openPrice.toFixed(2)}</td>
-                    {activeTab === "closed" && (
-                      <td className="py-2">
-                        {trade.closePrice
-                          ? (trade.closePrice / 100).toFixed(2)
-                          : "-"}
+                      <td
+                        className={`py-2 ${
+                          trade.type === "buy"
+                            ? "text-green-400"
+                            : "text-red-400"
+                        }`}
+                      >
+                        {trade.type.toUpperCase()}
                       </td>
-                    )}
-                    <td className="py-2">{trade.status}</td>
-                    <td className="py-2">
-                      {(currentBtcPrice - trade.openPrice).toFixed(2)}
-                    </td>
-                    <td className="py-2">
-                      {activeTab === "open" && (
-                        <button
-                          onClick={() => closeTrade(trade.orderId)}
-                          className="p-1 text-red-400 hover:text-red-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                      <td className="py-2">{currentBtcPrice.toFixed(2)}</td>
+                      <td className="py-2">{trade.leverage}x</td>
+                      <td className="py-2">{trade.openPrice.toFixed(2)}</td>
+                      {activeTab === "closed" && (
+                        <td className="py-2">
+                          {trade.closePrice ? trade.closePrice.toFixed(2) : "-"}
+                        </td>
                       )}
-                    </td>
-                  </tr>
-                ))}
+                      <td className="py-2">{trade.status}</td>
+                      <td className="py-2">{pnl.toFixed(2)}</td>
+                      <td className="py-2">
+                        {activeTab === "open" && (
+                          <button
+                            onClick={() => closeTrade(trade.orderId)}
+                            className="p-1 text-red-400 hover:text-red-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

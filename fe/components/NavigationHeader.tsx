@@ -10,6 +10,7 @@ export function NavigationHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const bal = useBalanceStore((state: any) => state.updateBalance);
+  const userBal = useBalanceStore((state: any) => state.bal);
   // ✅ Fetch balance
   useEffect(() => {
     const fetchBalance = async () => {
@@ -70,8 +71,8 @@ export function NavigationHeader() {
         <div className="flex items-center space-x-4">
           <div className="text-right">
             <div className="text-green-500 font-medium">
-              {balance !== null
-                ? `${balance.toLocaleString()} USD`
+              {userBal !== null
+                ? `${userBal.toLocaleString()} USD`
                 : "Loading..."}
             </div>
           </div>

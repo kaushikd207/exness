@@ -24,7 +24,7 @@ export default function LoginPage() {
         localStorage.setItem("token", data.token); // ✅ save token
         router.push("/"); // ✅ redirect to homepage
       } else {
-        setError(data.message || "Login failed");
+        setError(data.message || "Login failed go to register page");
       }
     } catch {
       setError("Something went wrong");
@@ -52,9 +52,15 @@ export default function LoginPage() {
         {error && <p className="text-red-500 mb-3">{error}</p>}
         <button
           type="submit"
-          className="w-full bg-blue-500 hover:bg-blue-600 p-2 rounded text-white"
+          className="w-full bg-blue-500 hover:bg-blue-600 p-2 rounded text-white mb-1.5"
         >
           Login
+        </button>
+        <button
+          onClick={() => router.push("/register")}
+          className="w-full bg-green-500 hover:bg-green-400 p-2 rounded text-white"
+        >
+          Register
         </button>
       </form>
     </div>
